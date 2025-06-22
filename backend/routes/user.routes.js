@@ -1,76 +1,230 @@
 const express = require('express');
 const router = express.Router();
+const User = require('../models/users.models');
 
-//simple in memory database
-let users = [];
-
-//Get all users
-router.get('/', (req, res) => {
-    res.json(users);
+// Get all users
+router.get('/', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search, status } = req.query;
+    const query = {};
+    
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { fname: { $regex: search, $options: 'i' } },
+        { lname: { $regex: search, $options: 'i' } },
+        { memberNumber: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Status filter
+    if (status !== undefined) {
+      query.isActive = status === 'true';
+    }
+    
+    const users = await User.find(query)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 })
+      .select('-__v');
+      
+    const total = await User.countDocuments(query);
+    
+    res.json({
+      users,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      totalUsers: total
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to fetch users', 
+      details: error.message 
+    });
+  }
 });
 
-//get user ny id
-router.get('/:id', (req, res) => {
-    const user = users.find(u => u.memberNumber === req.params.id);
-    if (!user) return res.status(404).send('User not found');
+// Get user by member number
+router.get('/:id', async (req, res) => {
+  try {
+    const user = await User.findOne({ memberNumber: req.params.id.toUpperCase() })
+      .select('-__v');
+      
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to fetch user', 
+      details: error.message 
+    });
+  }
 });
 
-//Create new user
-router.post('/', (req, res) => {
+// Create new user
+router.post('/', async (req, res) => {
+  try {
     const { memberNumber, fname, lname, email, phoneNumber, dateJoined, emergencyContacts } = req.body;
 
-    //Basic validation
-    if (!memberNumber || !fname || !lname || !phoneNumber){
-        return res.status(400).send('Missing required fields');
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { memberNumber: memberNumber?.toUpperCase() },
+        { email: email?.toLowerCase() }
+      ]
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: 'User already exists', 
+        details: 'Member number or email already in use' 
+      });
     }
 
-    const existing = users.find(u => u.memberNumber === memberNumber);
-  if (existing) return res.status(400).send('User with this member number already exists');
+    const newUser = new User({
+      memberNumber,
+      fname,
+      lname,
+      email,
+      phoneNumber,
+      dateJoined,
+      emergencyContacts
+    });
 
-  const newUser = {
-    memberNumber,
-    fname,
-    lname,
-    email,
-    phoneNumber,
-    dateJoined,
-    emergencyContacts
-  };
-
-  users.push(newUser);
-  res.status(201).json(newUser);
-
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: errors 
+      });
+    }
+    res.status(500).json({ 
+      error: 'Failed to create user', 
+      details: error.message 
+    });
+  }
 });
 
-//Update user by ID(Member Number)
-router.put('/:id', (req, res) => {
-    const index = users.findIndex(u => u.memberNumber === req.params.id);
-  if (index === -1) return res.status(404).send('User not found');
+// Update user by member number
+router.put('/:id', async (req, res) => {
+  try {
+    const { fname, lname, email, phoneNumber, dateJoined, emergencyContacts, isActive } = req.body;
+    
+    const updatedUser = await User.findOneAndUpdate(
+      { memberNumber: req.params.id.toUpperCase() },
+      {
+        fname,
+        lname,
+        email,
+        phoneNumber,
+        dateJoined,
+        emergencyContacts,
+        isActive
+      },
+      { 
+        new: true, 
+        runValidators: true,
+        omitUndefined: true // Only update provided fields
+      }
+    ).select('-__v');
 
-  const { fname, lname, email, phoneNumber, dateJoined, emergencyContacts } = req.body;
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-  // Update only provided fields
-  users[index] = {
-    ...users[index],
-    fname: fname ?? users[index].fname,
-    lname: lname ?? users[index].lname,
-    email: email ?? users[index].email,
-    phoneNumber: phoneNumber ?? users[index].phoneNumber,
-    dateJoined: dateJoined ?? users[index].dateJoined,
-    emergencyContacts: emergencyContacts ?? users[index].emergencyContacts
-  };
-
-  res.json(users[index]);
+    res.json(updatedUser);
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: errors 
+      });
+    }
+    res.status(500).json({ 
+      error: 'Failed to update user', 
+      details: error.message 
+    });
+  }
 });
 
-//Delete user by ID(Member Number)
-router.delete('/:id', (req, res) => {
-    const index = users.findIndex(u => u.memberNumber === req.params.id);
-  if (index === -1) return res.status(404).send('User not found');
+// Delete user by member number (soft delete)
+router.delete('/:id', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { memberNumber: req.params.id.toUpperCase() },
+      { isActive: false },
+      { new: true }
+    ).select('-__v');
 
-  const deletedUser = users.splice(index, 1);
-  res.json(deletedUser[0]);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ 
+      message: 'User deactivated successfully', 
+      user 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to delete user', 
+      details: error.message 
+    });
+  }
+});
+
+// Permanently delete user (admin only)
+router.delete('/:id/permanent', async (req, res) => {
+  try {
+    const deletedUser = await User.findOneAndDelete({ 
+      memberNumber: req.params.id.toUpperCase() 
+    });
+
+    if (!deletedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ 
+      message: 'User permanently deleted', 
+      user: deletedUser 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to permanently delete user', 
+      details: error.message 
+    });
+  }
+});
+
+// Restore deactivated user
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { memberNumber: req.params.id.toUpperCase() },
+      { isActive: true },
+      { new: true }
+    ).select('-__v');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ 
+      message: 'User restored successfully', 
+      user 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to restore user', 
+      details: error.message 
+    });
+  }
 });
 
 module.exports = router;
