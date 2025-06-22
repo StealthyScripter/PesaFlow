@@ -1,0 +1,975 @@
+{
+  "info": {
+    "name": "PesaFlow API - Complete Test Suite",
+    "description": "Comprehensive test collection for PesaFlow API including edge cases",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Root Endpoint",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/"
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users - Success Cases",
+      "item": [
+        {
+          "name": "Create User - Valid Data",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"fname\": \"John\",\n  \"lname\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phoneNumber\": \"+1234567890\",\n  \"emergencyContacts\": [\n    {\n      \"name\": \"Jane Doe\",\n      \"relationship\": \"Wife\",\n      \"phoneNumber\": \"+1234567891\",\n      \"email\": \"jane.doe@example.com\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Create User - Minimal Data",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM002\",\n  \"fname\": \"Jane\",\n  \"lname\": \"Smith\",\n  \"phoneNumber\": \"+9876543210\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create User - Special Characters",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM003\",\n  \"fname\": \"José\",\n  \"lname\": \"García-López\",\n  \"email\": \"jose.garcia@example.com\",\n  \"phoneNumber\": \"+34123456789\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Get Users - With Pagination",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users?page=1&limit=2"
+          }
+        },
+        {
+          "name": "Get Users - With Search",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users?search=john"
+          }
+        },
+        {
+          "name": "Get Users - Active Only",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users?status=true"
+          }
+        },
+        {
+          "name": "Get Specific User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/MEM001"
+          }
+        },
+        {
+          "name": "Update User - Partial",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/users/MEM001",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.updated@example.com\",\n  \"phoneNumber\": \"+1111111111\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Soft Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/users/MEM002"
+          }
+        },
+        {
+          "name": "Restore User",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/users/MEM002/restore"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users - Error Cases",
+      "item": [
+        {
+          "name": "Create User - Missing Required Fields",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fname\": \"Invalid\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create User - Invalid Email",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM999\",\n  \"fname\": \"Test\",\n  \"lname\": \"User\",\n  \"email\": \"invalid-email\",\n  \"phoneNumber\": \"+1234567890\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create User - Invalid Phone",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM998\",\n  \"fname\": \"Test\",\n  \"lname\": \"User\",\n  \"phoneNumber\": \"invalid-phone\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create User - Too Long Name",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM997\",\n  \"fname\": \"ThisIsAReallyLongFirstNameThatExceedsFiftyCharacters\",\n  \"lname\": \"User\",\n  \"phoneNumber\": \"+1234567890\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create User - Duplicate Member Number",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"fname\": \"Duplicate\",\n  \"lname\": \"User\",\n  \"phoneNumber\": \"+9999999999\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get User - Not Found",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/NONEXISTENT"
+          }
+        },
+        {
+          "name": "Update User - Not Found",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/users/NONEXISTENT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fname\": \"Updated\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Accounts - Success Cases",
+      "item": [
+        {
+          "name": "Create Account - Full Data",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"savings\": 5000.50,\n  \"monthlyContribution\": 250.75,\n  \"sharesOwned\": 15.25,\n  \"accountStatus\": \"active\",\n  \"notes\": \"Premium member account with high savings\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Account - Minimal Data",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM003\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Accounts",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/accounts"
+          }
+        },
+        {
+          "name": "Get Accounts - Filter by Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/accounts?status=active"
+          }
+        },
+        {
+          "name": "Get Accounts - Search by Member",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/accounts?search=MEM001"
+          }
+        },
+        {
+          "name": "Get Specific Account",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/accounts/MEM001"
+          }
+        },
+        {
+          "name": "Update Account - Partial",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/accounts/MEM001",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthlyContribution\": 300,\n  \"notes\": \"Updated contribution amount\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Account Balance - Credit",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/accounts/MEM001/balance",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500,\n  \"type\": \"credit\",\n  \"description\": \"Monthly contribution\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Account Balance - Debit",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/accounts/MEM001/balance",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100,\n  \"type\": \"debit\",\n  \"description\": \"Service fee\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Account Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/accounts/MEM001/summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Accounts - Error Cases",
+      "item": [
+        {
+          "name": "Create Account - Missing Member Number",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"savings\": 1000\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Account - User Not Found",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"NONEXISTENT\",\n  \"savings\": 1000\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Account - Duplicate",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"savings\": 2000\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Account - Negative Savings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM002\",\n  \"savings\": -500\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Account - Invalid Status",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM002\",\n  \"accountStatus\": \"invalid_status\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Balance - Insufficient Funds",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/accounts/MEM001/balance",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 99999,\n  \"type\": \"debit\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Balance - Invalid Type",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/accounts/MEM001/balance",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100,\n  \"type\": \"invalid\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Account - Not Found",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/accounts/NONEXISTENT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - Success Cases",
+      "item": [
+        {
+          "name": "Create Transaction - Deposit",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": 1000,\n  \"status\": \"completed\",\n  \"confirmedBy\": \"admin\",\n  \"description\": \"Initial deposit\",\n  \"reference\": \"DEP001\",\n  \"category\": \"savings\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Withdrawal Pending",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"withdrawal\",\n  \"amount\": 200,\n  \"description\": \"ATM withdrawal\",\n  \"reference\": \"WTH001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Auto ID",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"contribution\",\n  \"amount\": 250.75,\n  \"status\": \"completed\",\n  \"description\": \"Monthly contribution\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Share Purchase",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN_SHARE_001\",\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"share_purchase\",\n  \"amount\": 500,\n  \"status\": \"completed\",\n  \"category\": \"shares\",\n  \"description\": \"Purchase of 5 shares\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Transactions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions"
+          }
+        },
+        {
+          "name": "Get Transactions - Filter by Member",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions?memberNumber=MEM001"
+          }
+        },
+        {
+          "name": "Get Transactions - Filter by Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions?status=completed"
+          }
+        },
+        {
+          "name": "Get Transactions - Filter by Type",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions?type=deposit"
+          }
+        },
+        {
+          "name": "Get Transactions - Date Range",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions?startDate=2025-01-01&endDate=2025-12-31"
+          }
+        },
+        {
+          "name": "Get Transactions - Amount Range",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions?minAmount=100&maxAmount=1000"
+          }
+        },
+        {
+          "name": "Get Member Transactions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions/member/MEM001"
+          }
+        },
+        {
+          "name": "Complete Transaction",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/transactions/{{transaction_id}}/complete",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirmedBy\": \"admin_user\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/transactions/{{transaction_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"confirmedBy\": \"admin\",\n  \"description\": \"Updated description\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions - Error Cases",
+      "item": [
+        {
+          "name": "Create Transaction - Missing Required Fields",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - User Not Found",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"NONEXISTENT\",\n  \"type\": \"deposit\",\n  \"amount\": 100\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Invalid Type",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"invalid_type\",\n  \"amount\": 100\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Invalid Amount",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": -100\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Zero Amount",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Invalid Status",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": 100,\n  \"status\": \"invalid_status\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Transaction - Duplicate ID",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN_SHARE_001\",\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": 100\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Transaction - Not Found",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions/NONEXISTENT"
+          }
+        },
+        {
+          "name": "Complete Transaction - Already Completed",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/transactions/TXN_SHARE_001/complete",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirmedBy\": \"admin\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases & Stress Tests",
+      "item": [
+        {
+          "name": "Large Number Values",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": 999999999.99,\n  \"description\": \"Large amount test\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Very Long Description",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": 100,\n  \"description\": \"This is a very long description that exceeds the maximum allowed length of 200 characters and should trigger a validation error when processed by the API endpoint for transaction creation\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Special Characters in Data",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transactions",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberNumber\": \"MEM001\",\n  \"type\": \"deposit\",\n  \"amount\": 100,\n  \"description\": \"Payment with ñ, é, ü, 中文, 🚀, & symbols\",\n  \"reference\": \"REF-2025-🔥\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Empty Request Body",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Invalid JSON",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ invalid json }"
+            }
+          }
+        },
+        {
+          "name": "Non-existent Endpoint",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/nonexistent"
+          }
+        },
+        {
+          "name": "Wrong HTTP Method",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/users"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Performance & Pagination",
+      "item": [
+        {
+          "name": "Large Page Size",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions?limit=1000"
+          }
+        },
+        {
+          "name": "Zero Page Size",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users?limit=0"
+          }
+        },
+        {
+          "name": "Negative Page",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users?page=-1"
+          }
+        },
+        {
+          "name": "Large Page Number",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users?page=999999"
+          }
+        },
+        {
+          "name": "Complex Query Parameters",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/transactions?memberNumber=MEM001&status=completed&type=deposit&startDate=2025-01-01&endDate=2025-12-31&minAmount=50&maxAmount=5000&page=1&limit=5"
+          }
+        }
+      ]
+    }
+  ]
+}
