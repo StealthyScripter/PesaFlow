@@ -1,0 +1,71 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Environment Variables
+.env
+.env.*.local
+
+# Build Output
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+
+# Jest
+coverage/
+jest-cache/
+jest-output.json
+test-results/
+
+# Docker
+Dockerfile
+docker-compose.override.yml
+docker-compose.dev.yml
+docker-compose.test.yml
+.docker/
+**/.dockerignore
+
+# Ignore Docker volumes (if persisted locally)
+volumes/
+*.local.db
+
+# MongoDB
+dump/
+*.local.db
+*.mongodb
+
+# VS Code
+.vscode/
+.history/
+
+# macOS & Windows
+.DS_Store
+Thumbs.db
+
+# Optional npm cache
+.npm/
+
+# Misc
+*.tgz
+*.gz
+*.log
+*.bak
+*.swp
+*.swo
