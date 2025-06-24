@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { accountService } from '@/services/accountService';
 import { transactionService } from '@/services/transactionService';
-import { Account, Transaction } from '@/types';
+import { Transaction } from '@/types';
 
 interface DashboardStats {
-  totalMembers: number;
+  totalMembers: number | undefined;
   totalSavings: number;
-  totalTransactions: number;
+  totalTransactions: number | undefined;
   pendingTransactions: number;
 }
 
@@ -29,10 +29,10 @@ export default function Dashboard() {
       try {
         setLoading(true);
         
-        // Load accounts and transactions data
+        // Load accounts and transactions data - FIXED METHOD NAMES
         const [accountsData, transactionsData] = await Promise.all([
-          accountService.getAccounts({ limit: 1 }),
-          transactionService.getTransactions({ limit: 5 }),
+          accountService.getAllAccounts({ limit: 1 }), // Changed from getAccounts to getAllAccounts
+          transactionService.getAllTransactions({ limit: 5 }), // Changed from getTransactions to getAllTransactions
         ]);
 
         setStats({
