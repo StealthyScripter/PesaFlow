@@ -76,3 +76,27 @@ export const formatDate = (dateString: string): string => {
 export const getInitials = (firstName: string, lastName: string): string => {
   return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
 };
+
+export const formatDateTime = (dateString: string): string => {
+  return new Date(dateString).toLocaleString('en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export const downloadData = (data: string, filename: string, format: 'json' | 'csv') => {
+  const blob = new Blob([data], { 
+    type: format === 'json' ? 'application/json' : 'text/csv' 
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename}.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};

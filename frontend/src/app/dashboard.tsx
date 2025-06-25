@@ -1,82 +1,69 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import * as userService from '@/services/userService';
-import * as accountService from '@/services/accountService';
-import * as transactionService from '@/services/transactionService';
+import { userService } from '@/services/userService';
+import { accountService } from '@/services/accountService';
+import { transactionService } from '@/services/transactionService';
 import { formatCurrency, formatDate, formatDateTime, downloadData } from '@/services/api';
+import { Transaction, AccountSummary } from '@/types';
 
 interface DashboardData {
   totalSavings: number;
-  growthPercentage: number;
-  monthlyContribution: number;
-  lastUpdated: string;
-  nextUser: userService.User | null;
-  recentTransactions: transactionService.Transaction[];
-  accountSummary: accountService.AccountSummary | null;
+  totalAccounts: number;
+  totalUsers: number;
+  pendingTransactions: number;
+  recentTransactions: Transaction[];
+  accountSummary: AccountSummary | null;
 }
 
 export default function PesaFlowDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalSavings: 0,
-    growthPercentage: 0,
-    monthlyContribution: 0,
-    lastUpdated: '',
-    nextUser: null,
+    totalAccounts: 0,
+    totalUsers: 0,
+    pendingTransactions: 0,
     recentTransactions: [],
     accountSummary: null,
   });
 
-  const [allTransactions, setAllTransactions] = useState<transactionService.Transaction[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [transactionFilters, setTransactionFilters] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
     type: 'all',
-    sortBy: 'date' as 'date' | 'amount' | 'type' | 'status',
-    sortOrder: 'desc' as 'asc' | 'desc',
+    status: 'all',
   });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load dashboard data
+  // Load dashboard data using existing services
   const loadDashboardData = async () => {
     console.log('🚀 Loading dashboard data...');
     setLoading(true);
     setError(null);
 
     try {
-      // Load all required data in parallel
-      const [
-        accountsData,
-        growthMetrics,
-        contributionSummary,
-        randomUser,
-        recentTransactions,
-      ] = await Promise.all([
-        accountService.getAccounts(),
-        accountService.calculateSavingsGrowth(1),
-        accountService.getContributionSummary(),
-        userService.getRandomUser(),
-        transactionService.getRecentTransactions(5),
+      // Load all required data in parallel using existing service methods
+      const [accountsData, usersData, transactionsData] = await Promise.all([
+        accountService.getAllAccounts({ limit: 1 }), // Just get summary
+        userService.getAllUsers({ limit: 1 }), // Just get count
+        transactionService.getAllTransactions({ limit: 10 }), // Get recent transactions
       ]);
 
       console.log('📊 Dashboard data loaded:', {
         accountsData,
-        growthMetrics,
-        contributionSummary,
-        randomUser,
-        recentTransactions,
+        usersData,
+        transactionsData,
       });
 
       setDashboardData({
-        totalSavings: accountsData.summary.totalSavings,
-        growthPercentage: growthMetrics.growthPercentage,
-        monthlyContribution: contributionSummary.totalMonthlyContributions,
-        lastUpdated: contributionSummary.lastUpdated,
-        nextUser: randomUser,
-        recentTransactions,
-        accountSummary: accountsData.summary,
+        totalSavings: accountsData.summary?.totalSavings || 0,
+        totalAccounts: accountsData.totalAccounts || 0,
+        totalUsers: usersData.totalUsers || 0,
+        pendingTransactions: transactionsData.summary?.pendingTransactions || 0,
+        recentTransactions: transactionsData.transactions || [],
+        accountSummary: accountsData.summary || null,
       });
 
     } catch (err) {
@@ -88,36 +75,41 @@ export default function PesaFlowDashboard() {
     }
   };
 
-  // Load all transactions with filtering
+  // Load all transactions with filtering using existing services
   const loadAllTransactions = async () => {
     console.log('📋 Loading all transactions with filters:', transactionFilters);
 
     try {
-      const params: transactionService.GetTransactionsParams = {
+      // Build filters for existing API
+      const filters: any = {
         limit: 1000,
-        sortBy: transactionFilters.sortBy,
-        sortOrder: transactionFilters.sortOrder,
       };
 
-      // Add date filter for specific month
+      // Add type filter if not 'all'
+      if (transactionFilters.type !== 'all') {
+        filters.type = transactionFilters.type;
+      }
+
+      // Add status filter if not 'all'
+      if (transactionFilters.status !== 'all') {
+        filters.status = transactionFilters.status;
+      }
+
+      // Add date range for the selected month/year
       if (transactionFilters.month && transactionFilters.year) {
         const startDate = new Date(transactionFilters.year, transactionFilters.month - 1, 1);
         const endDate = new Date(transactionFilters.year, transactionFilters.month, 0);
-        params.startDate = startDate.toISOString().split('T')[0];
-        params.endDate = endDate.toISOString().split('T')[0];
+        filters.startDate = startDate.toISOString().split('T')[0];
+        filters.endDate = endDate.toISOString().split('T')[0];
       }
 
-      // Add type filter
-      if (transactionFilters.type !== 'all') {
-        params.type = transactionFilters.type;
-      }
+      const response = await transactionService.getAllTransactions(filters);
+      setAllTransactions(response.transactions || []);
 
-      const response = await transactionService.getTransactions(params);
-      setAllTransactions(response.transactions);
-
-      console.log('✅ All transactions loaded:', response.transactions.length, 'transactions');
+      console.log('✅ All transactions loaded:', response.transactions?.length || 0, 'transactions');
     } catch (err) {
       console.error('❌ Error loading transactions:', err);
+      setAllTransactions([]);
     }
   };
 
@@ -130,88 +122,57 @@ export default function PesaFlowDashboard() {
     ]);
   };
 
-  // Add new transaction
-  const addTransaction = async (transactionData: transactionService.CreateTransactionData) => {
-    console.log('➕ Adding new transaction:', transactionData);
-
-    try {
-      const newTransaction = await transactionService.createTransaction(transactionData);
-      console.log('✅ Transaction added successfully:', newTransaction);
-      
-      // Refresh data to show the new transaction
-      await refreshData();
-      
-      return newTransaction;
-    } catch (err) {
-      console.error('❌ Error adding transaction:', err);
-      throw err;
-    }
-  };
-
-  // Download statement
-  const downloadStatement = async (memberNumber: string, format: 'json' | 'csv' = 'json') => {
-    console.log('📄 Downloading statement for:', memberNumber, 'format:', format);
-
-    try {
-      const statement = await accountService.downloadAccountStatement(memberNumber, format);
-      downloadData(statement, `statement_${memberNumber}_${Date.now()}`, format);
-      console.log('✅ Statement downloaded successfully');
-    } catch (err) {
-      console.error('❌ Error downloading statement:', err);
-    }
-  };
-
-  // Export data
+  // Export data function (simplified)
   const exportData = async (type: 'users' | 'accounts' | 'transactions', format: 'json' | 'csv' = 'json') => {
     console.log('📥 Exporting data:', type, 'format:', format);
 
     try {
-      let data: string;
+      let data: any;
       let filename: string;
 
       switch (type) {
         case 'users':
-          data = await userService.exportUserData(format);
+          const usersResponse = await userService.getAllUsers({ limit: 1000 });
+          data = usersResponse.users || [];
           filename = `users_export_${Date.now()}`;
           break;
         case 'accounts':
-          data = await accountService.exportAccountData(format);
+          const accountsResponse = await accountService.getAllAccounts({ limit: 1000 });
+          data = accountsResponse.accounts || [];
           filename = `accounts_export_${Date.now()}`;
           break;
         case 'transactions':
-          data = await transactionService.exportTransactionData(transactionFilters, format);
+          data = allTransactions;
           filename = `transactions_export_${Date.now()}`;
           break;
         default:
           throw new Error('Invalid export type');
       }
 
-      downloadData(data, filename, format);
+      // Convert to string format
+      let exportString: string;
+      if (format === 'json') {
+        exportString = JSON.stringify(data, null, 2);
+      } else {
+        // Simple CSV conversion
+        if (data.length > 0) {
+          const headers = Object.keys(data[0]).join(',');
+          const rows = data.map((item: any) => 
+            Object.values(item).map(val => 
+              typeof val === 'string' ? `"${val}"` : val
+            ).join(',')
+          );
+          exportString = [headers, ...rows].join('\n');
+        } else {
+          exportString = 'No data available';
+        }
+      }
+
+      downloadData(exportString, filename, format);
       console.log('✅ Data exported successfully');
     } catch (err) {
       console.error('❌ Error exporting data:', err);
     }
-  };
-
-  // Quick transaction helpers
-  const quickDeposit = async (memberNumber: string, amount: number) => {
-    return addTransaction({
-      memberNumber,
-      type: 'deposit',
-      amount,
-      description: `Quick deposit - ${formatCurrency(amount)}`,
-      status: 'completed',
-    });
-  };
-
-  const quickWithdrawal = async (memberNumber: string, amount: number) => {
-    return addTransaction({
-      memberNumber,
-      type: 'withdrawal',
-      amount,
-      description: `Quick withdrawal - ${formatCurrency(amount)}`,
-      status: 'pending',
-    });
   };
 
   // Load data on component mount
@@ -275,54 +236,42 @@ export default function PesaFlowDashboard() {
             <div className="text-2xl font-bold text-gray-900">
               {formatCurrency(dashboardData.totalSavings)}
             </div>
-            <div className={`text-sm ${dashboardData.growthPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {dashboardData.growthPercentage >= 0 ? '↗' : '↘'} {Math.abs(dashboardData.growthPercentage)}% this month
+            <div className="text-sm text-gray-500">
+              Across all accounts
             </div>
           </div>
 
-          {/* Monthly Contribution */}
+          {/* Total Accounts */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Monthly Contributions</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Total Accounts</h3>
             <div className="text-2xl font-bold text-gray-900">
-              {formatCurrency(dashboardData.monthlyContribution)}
+              {dashboardData.totalAccounts}
             </div>
             <div className="text-sm text-gray-500">
-              Last updated: {formatDate(dashboardData.lastUpdated)}
+              Active: {dashboardData.accountSummary?.activeAccounts || 0}
             </div>
           </div>
 
-          {/* Active Accounts */}
+          {/* Total Users */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Active Accounts</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Total Users</h3>
             <div className="text-2xl font-bold text-gray-900">
-              {dashboardData.accountSummary?.activeAccounts || 0}
+              {dashboardData.totalUsers}
             </div>
             <div className="text-sm text-gray-500">
-              Total Shares: {dashboardData.accountSummary?.totalShares || 0}
+              Registered members
             </div>
           </div>
 
-          {/* Next User */}
+          {/* Pending Transactions */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Featured Member</h3>
-            {dashboardData.nextUser ? (
-              <div>
-                <div className="font-semibold text-gray-900">
-                  {dashboardData.nextUser.fname} {dashboardData.nextUser.lname}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {dashboardData.nextUser.memberNumber}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Joined: {formatDate(dashboardData.nextUser.dateJoined)}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {dashboardData.nextUser.phoneNumber}
-                </div>
-              </div>
-            ) : (
-              <div className="text-gray-500">No members found</div>
-            )}
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Pending</h3>
+            <div className="text-2xl font-bold text-gray-900">
+              {dashboardData.pendingTransactions}
+            </div>
+            <div className="text-sm text-gray-500">
+              Awaiting approval
+            </div>
           </div>
         </div>
 
@@ -349,7 +298,7 @@ export default function PesaFlowDashboard() {
                       <div className="text-sm text-gray-500">
                         {transaction.memberNumber} • {formatDateTime(transaction.date)}
                       </div>
-                      <div className="text-sm text-gray-600">{transaction.description}</div>
+                      <div className="text-sm text-gray-600">{transaction.description || 'No description'}</div>
                     </div>
                     <div className="text-right">
                       <div className={`font-bold ${
@@ -399,7 +348,7 @@ export default function PesaFlowDashboard() {
             </div>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
                 <select
@@ -447,28 +396,16 @@ export default function PesaFlowDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
-                  value={transactionFilters.sortBy}
-                  onChange={(e) => setTransactionFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
+                  value={transactionFilters.status}
+                  onChange={(e) => setTransactionFilters(prev => ({ ...prev, status: e.target.value }))}
                   className="border rounded-md px-3 py-2 w-full"
                 >
-                  <option value="date">Date</option>
-                  <option value="amount">Amount</option>
-                  <option value="type">Type</option>
-                  <option value="status">Status</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-                <select
-                  value={transactionFilters.sortOrder}
-                  onChange={(e) => setTransactionFilters(prev => ({ ...prev, sortOrder: e.target.value as any }))}
-                  className="border rounded-md px-3 py-2 w-full"
-                >
-                  <option value="desc">Newest First</option>
-                  <option value="asc">Oldest First</option>
+                  <option value="all">All Status</option>
+                  <option value="completed">Completed</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
                 </select>
               </div>
             </div>
@@ -509,8 +446,8 @@ export default function PesaFlowDashboard() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {transaction.memberNumber}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {transaction.type}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
+                          {transaction.type.replace('_', ' ')}
                         </td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
                           ['deposit', 'contribution'].includes(transaction.type) ? 'text-green-600' : 'text-red-600'
@@ -560,15 +497,10 @@ export default function PesaFlowDashboard() {
               💰 Export Accounts
             </button>
             <button
-              onClick={() => {
-                if (dashboardData.nextUser) {
-                  downloadStatement(dashboardData.nextUser.memberNumber, 'csv');
-                }
-              }}
+              onClick={() => exportData('transactions', 'csv')}
               className="bg-orange-500 text-white p-4 rounded-lg hover:bg-orange-600"
-              disabled={!dashboardData.nextUser}
             >
-              📄 Download Statement
+              📄 Export Transactions
             </button>
           </div>
         </div>
@@ -578,9 +510,9 @@ export default function PesaFlowDashboard() {
           <div className="text-sm font-mono">
             <div>🚀 PesaFlow Dashboard Active</div>
             <div>📊 Total Savings: {formatCurrency(dashboardData.totalSavings)}</div>
-            <div>📈 Growth: {dashboardData.growthPercentage}%</div>
-            <div>💰 Monthly Contributions: {formatCurrency(dashboardData.monthlyContribution)}</div>
-            <div>👥 Active Accounts: {dashboardData.accountSummary?.activeAccounts || 0}</div>
+            <div>👥 Total Users: {dashboardData.totalUsers}</div>
+            <div>💰 Total Accounts: {dashboardData.totalAccounts}</div>
+            <div>⏳ Pending Transactions: {dashboardData.pendingTransactions}</div>
             <div>📋 Recent Transactions: {dashboardData.recentTransactions.length}</div>
             <div>📄 All Transactions: {allTransactions.length}</div>
             <div className="mt-2 text-yellow-400">
