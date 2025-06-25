@@ -4,7 +4,7 @@ const accountSchema = new mongoose.Schema({
   memberNumber: {
     type: String,
     required: [true, 'Member number is required'],
-    unique: true,
+    unique: true,  // This creates an index automatically
     trim: true,
     uppercase: true,
     ref: 'User'
@@ -40,7 +40,8 @@ const accountSchema = new mongoose.Schema({
       message: '{VALUE} is not a valid account status'
     },
     default: 'pending',
-    lowercase: true
+    lowercase: true,
+    index: true
   },
   lastTransactionDate: {
     type: Date
@@ -56,14 +57,6 @@ const accountSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-// Virtual for total value
-accountSchema.virtual('totalValue').get(function() {
-  return this.savings + this.sharesOwned;
-});
-
-// Index for performance
-accountSchema.index({ accountStatus: 1 });
 
 // Pre-save middleware
 accountSchema.pre('save', function(next) {

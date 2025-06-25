@@ -37,7 +37,7 @@ export async function apiCall<T>(
         errorMessage = errorData.error || errorMessage;
         errorDetails = errorData.details;
       } catch {
-        // If can't parse JSON, use default error message
+       throw errorMessage;
       }
       
       throw new ApiError(errorMessage, response.status, errorDetails);

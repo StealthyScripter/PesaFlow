@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
   memberNumber: {
     type: String,
     required: [true, 'Member number is required'],
-    unique: true,
+    unique: true,  
     trim: true,
     uppercase: true
   },
@@ -63,7 +63,8 @@ const userSchema = new mongoose.Schema({
   emergencyContacts: [emergencyContactSchema],
   isActive: {
     type: Boolean,
-    default: true
+    default: true,
+    index: true  
   }
 }, {
   timestamps: true
@@ -73,9 +74,6 @@ const userSchema = new mongoose.Schema({
 userSchema.virtual('fullName').get(function() {
   return `${this.fname} ${this.lname}`;
 });
-
-// Index for performance
-userSchema.index({ email: 1 });
 
 // Pre-save middleware
 userSchema.pre('save', function(next) {

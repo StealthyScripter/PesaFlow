@@ -4,7 +4,7 @@ const transactionSchema = new mongoose.Schema({
   transactionId: {
     type: String,
     required: [true, 'Transaction ID is required'],
-    unique: true,
+    unique: true, 
     trim: true,
     uppercase: true
   },
@@ -13,12 +13,14 @@ const transactionSchema = new mongoose.Schema({
     required: [true, 'Member number is required'],
     trim: true,
     uppercase: true,
-    ref: 'User'
+    ref: 'User',
+    index: true 
   },
   date: {
     type: Date,
     default: Date.now,
-    required: true
+    required: true,
+    index: true 
   },
   type: {
     type: String,
@@ -27,7 +29,8 @@ const transactionSchema = new mongoose.Schema({
       values: ['deposit', 'withdrawal', 'contribution', 'share_purchase', 'loan_payment', 'dividend', 'fee', 'transfer'],
       message: '{VALUE} is not a valid transaction type'
     },
-    lowercase: true
+    lowercase: true,
+    index: true
   },
   amount: {
     type: Number,
@@ -44,7 +47,8 @@ const transactionSchema = new mongoose.Schema({
       message: '{VALUE} is not a valid transaction status'
     },
     default: 'pending',
-    lowercase: true
+    lowercase: true,
+    index: true 
   },
   accountBalance: {
     type: Number,
@@ -75,21 +79,6 @@ const transactionSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-// Virtual for formatted amount
-transactionSchema.virtual('formattedAmount').get(function() {
-  return `$${this.amount.toFixed(2)}`;
-});
-
-// Index for performance
-transactionSchema.index({ memberNumber: 1 });
-transactionSchema.index({ date: -1 });
-transactionSchema.index({ status: 1 });
-transactionSchema.index({ type: 1 });
-
-// Compound indexes
-transactionSchema.index({ memberNumber: 1, date: -1 });
-transactionSchema.index({ memberNumber: 1, status: 1 });
 
 // Pre-save middleware
 transactionSchema.pre('save', function(next) {

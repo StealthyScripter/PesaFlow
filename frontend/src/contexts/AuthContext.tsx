@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthState } from '../types';
+import { AuthState } from '../types';
 import { userService } from '../services/userService';
 
 interface AuthContextType extends AuthState {
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } catch (err) {
         localStorage.removeItem('authUser');
+        throw err;
       }
     }
   }, []);

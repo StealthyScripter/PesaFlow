@@ -42,7 +42,7 @@ docker-compose.test.yml
 .docker/
 **/.dockerignore
 
-# Ignore Docker volumes (if persisted locally)
+# Ignore Docker volumes
 volumes/
 *.local.db
 
