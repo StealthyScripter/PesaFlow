@@ -2,13 +2,17 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthState } from '../types';
-import { userService } from '../services/userService';
+import { authService } from '../services/authService';
+import { tokenManager } from '../services/api';
 
 interface AuthContextType extends AuthState {
-  login: (memberNumber: string) => Promise<void>;
+  login: (memberNumber: string, password: string) => Promise<void>;
+  register: (userData: any) => Promise<void>;
   logout: () => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   loading: boolean;
   error: string | null;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,24 +26,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (memberNumber: string) => {
+  const login = async (memberNumber: string, password: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      const user = await userService.getUserByMemberNumber(memberNumber);
+      const response = await authService.login({ memberNumber, password });
       
-      // Simple admin check (you can modify this logic)
-      const isAdmin = memberNumber.includes('ADMIN') || memberNumber === 'MEM001';
+      const isAdmin = response.user.role === 'admin';
       
       setAuthState({
         isAuthenticated: true,
-        user,
+        user: response.user,
         isAdmin,
       });
-      
-      // Store in localStorage for persistence
-      localStorage.setItem('authUser', JSON.stringify({ user, isAdmin }));
     } catch (err: any) {
       setError(err.message || 'Login failed');
       throw err;
@@ -48,38 +48,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const register = async (userData: any) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authService.register(userData);
+      
+      const isAdmin = response.user.role === 'admin';
+      
+      setAuthState({
+        isAuthenticated: true,
+        user: response.user,
+        isAdmin,
+      });
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    await authService.logout();
     setAuthState({
       isAuthenticated: false,
       user: null,
       isAdmin: false,
     });
-    localStorage.removeItem('authUser');
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await authService.changePassword({ currentPassword, newPassword });
+    } catch (err: any) {
+      setError(err.message || 'Password change failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await authService.getCurrentUser();
+      setAuthState(prev => ({
+        ...prev,
+        user: response.user,
+        isAdmin: response.user.role === 'admin',
+      }));
+    } catch (err) {
+      // If refresh fails, user might need to re-login
+      logout();
+      console.log(err);
+    }
   };
 
   // Check for stored auth on mount
   useEffect(() => {
-    const storedAuth = localStorage.getItem('authUser');
-    if (storedAuth) {
-      try {
-        const { user, isAdmin } = JSON.parse(storedAuth);
-        setAuthState({
-          isAuthenticated: true,
-          user,
-          isAdmin,
-        });
-      } catch (err) {
-        localStorage.removeItem('authUser');
-        throw err;
+    const checkAuth = async () => {
+      if (authService.isAuthenticated()) {
+        try {
+          setLoading(true);
+          const response = await authService.getCurrentUser();
+          setAuthState({
+            isAuthenticated: true,
+            user: response.user,
+            isAdmin: response.user.role === 'admin',
+          });
+        } catch (err) {
+          // Token might be invalid, remove it
+          tokenManager.removeToken();
+          console.log(err);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    };
+
+    checkAuth();
   }, []);
 
   return (
     <AuthContext.Provider value={{
       ...authState,
       login,
+      register,
       logout,
+      changePassword,
+      refreshUser,
       loading,
       error,
     }}>

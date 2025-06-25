@@ -56,6 +56,18 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number']
   },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minLength: [6, 'Password must be atleast 6 characters'],
+    select: false
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  }
+  ,
   dateJoined: {
     type: Date,
     default: Date.now
@@ -65,6 +77,12 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
     index: true  
+  },
+  lastLogin: {
+    type: Date
+  },
+  passwordchangedAt: {
+    type:Date
   }
 }, {
   timestamps: true
@@ -82,5 +100,56 @@ userSchema.pre('save', function(next) {
   }
   next();
 });
+
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (this.memberNumber) {
+    this.memberNumber = this.memberNumber.toUpperCase();
+  }
+  
+  // Only hash password if it's been modified
+  if (!this.isModified('password')) return next();
+  
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+// Update passwordChangedAt field
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password') || this.isNew) return next();
+  
+  this.passwordChangedAt = Date.now() - 1000; // Subtract 1 second to account for JWT timing
+  next();
+});
+
+// Instance method to check password
+userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+// Instance method to generate JWT token
+userSchema.methods.generateToken = function() {
+  return jwt.sign(
+    { 
+      id: this._id, 
+      memberNumber: this.memberNumber,
+      role: this.role 
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+};
+
+// Instance method to check if password changed after JWT was issued
+userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
+};
 
 module.exports = mongoose.model('User', userSchema);

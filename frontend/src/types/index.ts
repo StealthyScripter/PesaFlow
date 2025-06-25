@@ -11,6 +11,8 @@ export interface User {
   fullName?: string;
   createdAt?: string;
   updatedAt?: string;
+  password?: string;
+  role?: 'user' | 'admin';
 }
 
 export interface EmergencyContact {
@@ -99,4 +101,17 @@ export interface DashboardData {
   account: Account | null;
   recentTransactions: Transaction[];
   summary: any;
+}
+
+export interface AuthContextType {
+  isAuthenticated: boolean;
+  user: User | null;
+  isAdmin: boolean;
+  login: (memberNumber: string, password: string) => Promise<void>;
+  register: (userData: any) => Promise<void>;
+  logout: () => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  loading: boolean;
+  error: string | null;
+  refreshUser: () => Promise<void>;
 }

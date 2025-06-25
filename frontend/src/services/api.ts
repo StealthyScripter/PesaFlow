@@ -16,10 +16,14 @@ export async function apiCall<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+
+  //Get token and add to headers
+  const token = tokenManager.getToken();
   
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && {Authorization: `Bearer ${token}`}),
       ...options.headers,
     },
     ...options,
@@ -29,6 +33,15 @@ export async function apiCall<T>(
     const response = await fetch(url, config);
     
     if (!response.ok) {
+      // Handle 401 specifically for token expiration
+      if (response.status === 401) {
+        tokenManager.removeToken();
+        // Redirect to login or refresh token
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
+      }
+      
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       let errorDetails: string | string[] | undefined;
       
@@ -37,7 +50,7 @@ export async function apiCall<T>(
         errorMessage = errorData.error || errorMessage;
         errorDetails = errorData.details;
       } catch {
-       throw errorMessage;
+        // Response not JSON, use status text
       }
       
       throw new ApiError(errorMessage, response.status, errorDetails);
@@ -99,4 +112,35 @@ export const downloadData = (data: string, filename: string, format: 'json' | 'c
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+};
+
+// token management functions
+export const tokenManager = {
+  getToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('authToken');
+    }
+    return null;
+  },
+
+  setToken(token: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('authToken', token);
+    }
+  },
+
+  removeToken(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken');
+    }
+  },
+
+  isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
+  }
 };

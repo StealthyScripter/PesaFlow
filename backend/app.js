@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { authMiddleware } = require('./middleware/auth');
 const connectDB = require('./config/database');
 
 const app = express();
@@ -20,16 +21,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// auth route
+const authRoutes = require('./routes/auth.routes');
+app.use('/api/auth', authRoutes);
+
+//routes
 const userRoutes = require('./routes/user.routes');
 const accountRoutes = require('./routes/account.routes');
 const transactionRoutes = require('./routes/transaction.routes');
 
-app.use('/api/users', userRoutes);
-app.use('/api/accounts', accountRoutes);
-app.use('/api/transactions', transactionRoutes);
+app.use('/api/users', authMiddleware, userRoutes);
+app.use('/api/accounts',authMiddleware , accountRoutes);
+app.use('/api/transactions',authMiddleware , transactionRoutes);
 
-// Root route
+// Root route`1q
 app.get('/', (req, res) => {
   res.json({
     message: 'PesaFlow API is running',

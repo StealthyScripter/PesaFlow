@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/users.models');
+const { adminOnly, restrictToOwner } = require('../middleware/auth');
 
 // Get all users
-router.get('/', async (req, res) => {
+router.get('/', adminOnly, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status } = req.query;
     const query = {};
@@ -46,7 +47,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get user by member number
-router.get('/:id', async (req, res) => {
+router.get('/:id', restrictToOwner, async (req, res) => {
   try {
     const user = await User.findOne({ memberNumber: req.params.id.toUpperCase() })
       .select('-__v');
@@ -65,7 +66,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new user
-router.post('/', async (req, res) => {
+router.post('/',adminOnly, async (req, res) => {
   try {
     const { memberNumber, fname, lname, email, phoneNumber, dateJoined, emergencyContacts } = req.body;
 
@@ -112,7 +113,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update user by member number
-router.put('/:id', async (req, res) => {
+router.put('/:id',restrictToOwner, async (req, res) => {
   try {
     const { fname, lname, email, phoneNumber, dateJoined, emergencyContacts, isActive } = req.body;
     
@@ -155,7 +156,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete user by member number (soft delete)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',adminOnly, async (req, res) => {
   try {
     const user = await User.findOneAndUpdate(
       { memberNumber: req.params.id.toUpperCase() },
@@ -179,8 +180,8 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Permanently delete user (admin only)
-router.delete('/:id/permanent', async (req, res) => {
+// Permanently delete user
+router.delete('/:id/permanent',adminOnly, async (req, res) => {
   try {
     const deletedUser = await User.findOneAndDelete({ 
       memberNumber: req.params.id.toUpperCase() 
@@ -203,7 +204,7 @@ router.delete('/:id/permanent', async (req, res) => {
 });
 
 // Restore deactivated user
-router.patch('/:id/restore', async (req, res) => {
+router.patch('/:id/restore',adminOnly, async (req, res) => {
   try {
     const user = await User.findOneAndUpdate(
       { memberNumber: req.params.id.toUpperCase() },

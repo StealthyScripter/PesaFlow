@@ -13,13 +13,13 @@ export function LoginScreen() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!memberNumber.trim()) {
-      showNotification('Please enter a member number', 'error');
+    if (!memberNumber.trim() || !password.trim) {
+      showNotification('Please enter a member number and password', 'error');
       return;
     }
 
     try {
-      await login(memberNumber.toUpperCase());
+      await login(memberNumber.toUpperCase(), password);
       showNotification(`Welcome back!`, 'success');
     } catch (err:any) {
       showNotification(err.message || 'Login failed', 'error');
@@ -60,7 +60,6 @@ export function LoginScreen() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
 
