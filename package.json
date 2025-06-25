@@ -1,0 +1,35 @@
+{
+  "name": "pesaflow-fullstack",
+  "version": "1.0.0",
+  "description": "PesaFlow SACCO Management Platform - Full Stack MERN Application",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "test": "concurrently \"cd backend && npm test\" \"cd frontend && npm test\"",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules"
+  },
+  "keywords": [
+    "mern",
+    "sacco",
+    "financial",
+    "management",
+    "react",
+    "nodejs",
+    "mongodb",
+    "express"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
