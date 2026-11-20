@@ -1,0 +1,39 @@
+{
+  "project": "PesaFlow",
+  "created": "2026-11-19",
+  "screenshots": "capture-pending",
+  "assets": [
+    {
+      "path": "graphics/logos/concept-mark.svg",
+      "status": "concept-draft",
+      "sha256": "93df0e1d97af50cabf7aaf01c7dcae855b0ec4db11a3e7d34af31f38e4238799"
+    },
+    {
+      "path": "graphics/merch/print-artwork.svg",
+      "status": "concept-draft",
+      "sha256": "781478b80af97cf2b37ef60f4ca26a981457142fe325754032b67636cf0391e0"
+    },
+    {
+      "path": "graphics/playstore/feature-graphic.svg",
+      "status": "concept-draft",
+      "sha256": "484eed0441a993398ca4bf2627d32acf963b7268d3590ec117c565a49136ee06"
+    },
+    {
+      "path": "graphics/playstore/icon-concept.svg",
+      "status": "concept-draft",
+      "sha256": "93df0e1d97af50cabf7aaf01c7dcae855b0ec4db11a3e7d34af31f38e4238799"
+    },
+    {
+      "path": "graphics/posters/launch-poster.svg",
+      "status": "concept-draft",
+      "sha256": "0e27320d5151f1fdacc5e4de373f041f056dfa054d61d7939c46d91a76998197"
+    },
+    {
+      "path": "graphics/social/social-card.svg",
+      "status": "concept-draft",
+      "sha256": "ad4b07f83a9d90a9e595009f59077d8b73d0c288ada2662d2d4cd6e396f1dad7"
+    }
+  ],
+  "profile": "project.json",
+  "last_reviewed": "2026-11-19"
+}
